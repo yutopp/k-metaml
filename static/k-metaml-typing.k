@@ -1,0 +1,99 @@
+//
+// Copyright yutopp 2015 - .
+//
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+//
+
+require "../k-metaml-syntax.k"
+
+module K-METAML-TYPING
+  imports K-METAML-SYNTAX
+
+  syntax Type ::= "int" | "bool"
+                | Type "->" Type
+                > "#<#" Type "#>#"          // code
+                > "(" Type ")"              [bracket]
+
+  syntax TypeTRI ::= typeTriple(Type, Int, Int)   // Type, R, N
+
+  syntax Term ::= Type
+  syntax KResult ::= Type
+
+  configuration <k> $PGM:Term </k>
+                <level> 0 </level>
+                <run> 0 </run>
+                <tenv> .Map </tenv>
+
+
+  // Int n
+  rule _:Int => int:Type        [structural]
+
+  // Bool n
+  rule _:Bool => bool:Type      [structural]
+
+
+  // _+_
+  rule T1:Type + T2:Type => T1 =?= int ~> T2 =?= int ~> int
+
+
+  // Br n
+  syntax KItem ::= brEnd(Int) // Ndepth
+  rule <k> < E:Term > => E ~> brEnd(N) ... </k>
+       <level> N => N +Int 1 </level>
+
+  rule <k> T:Type ~> brEnd(N) => #<# T #># ... </k>
+       <level> BN => N </level>
+       when BN ==Int (N +Int 1)
+
+
+  // Abs n
+  syntax KItem ::= absEnd(Type, Int, Int, Map) // TypeEnv
+  rule <k> lambda X:Id . E:Term => E ~> absEnd(?T1, N, R, Rho) ... </k>
+       <tenv> Rho => Rho[X <- typeTriple(?T1, R, N)] </tenv>
+       <level> N </level>
+       <run> R </run>
+
+  rule <k> T2:Type ~> absEnd(T1, N, R, Rho) => T1 -> T2 ... </k>
+       <level> N </level>
+       <run> R </run>
+       <tenv> _ => Rho </tenv>
+
+
+  // Var N
+  rule <k> X:Id => XType ... </k>
+       <tenv> ... X |-> typeTriple(XType, XR, XN) ... </tenv>
+       <level> N </level>
+       <run> R </run>
+       when (XN +Int R) <=Int (N +Int XR)
+
+  // Esc n+1
+  syntax KItem ::= escEnd(Int) // Level
+  rule <k> ~ E:Term => E ~> escEnd(N) ... </k>
+       <level> N => N -Int 1 </level>
+       when N >=Int 1
+
+  rule <k> T:Type ~> escEnd(N) => T ... </k>
+       <level> BN => N </level>
+       when BN ==Int (N -Int 1)
+
+
+  // App n
+  rule <k> (T1 -> T2):Type T1:Type => T2 ... </k>
+
+
+  // run n
+  syntax KItem ::= runEnd(Int) // Level, Run
+  rule <k> run E:Term => E ~> runEnd(R) ...</k>
+       <run> R => R +Int 1 </run>
+
+  rule <k> (#<# T #>#):Type ~> runEnd(R) => T ... </k>
+       <run> R +Int 1 => R </run>
+
+
+  // unification...
+  syntax KItem ::= Type "=?=" Type
+  rule T =?= T => .
+
+endmodule
