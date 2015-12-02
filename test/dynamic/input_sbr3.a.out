@@ -1,0 +1,7 @@
+Search results:
+
+Solution 1:
+N:Int -->
+-1
+V:Term -->
+fn _3 => (fn _5 => _5 * 5) _3 - 2
