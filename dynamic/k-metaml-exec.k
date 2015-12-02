@@ -115,7 +115,7 @@ module K-METAML-EXEC
 
 
   // Abs 0
-  rule fn X:Id (N Xs):Rest E:Term => fn X => (fn N Xs E) [structural]
+  rule fn X:Id (N Xs):Rest E:Term => fn X => (fn N Xs E) [macro]
 
   syntax KItem ::= abs0End(Id, Map, Int)
   rule <k> fn X:Id => E:Term => E ~> abs0End(!XX, VEnv, 0) ... </k>
