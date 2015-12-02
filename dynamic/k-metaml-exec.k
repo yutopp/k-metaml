@@ -39,6 +39,12 @@ module K-METAML-EXEC
   rule isValue(< E:Term >, 1) => true when isValue(E, 2)
   rule isValue(run E:Term, 1) => true when isValue(E, 1)
 
+  rule isValue(E1:Term E2:Term, N2) => true when N2 >=Int 2 andBool isValue(E1, N2) andBool isValue(E2, N2)
+  rule isValue(fn X:Id => E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
+  rule isValue(< E:Term >, N2) => true when N2 >=Int 2 andBool isValue(E, N2 +Int 1)
+  rule isValue(~ E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2 -Int 1)
+  rule isValue(run E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
+
   rule isValue(_, _) => false
 
 
