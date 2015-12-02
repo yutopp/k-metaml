@@ -1,1 +1,1 @@
-(lambda x.x) 10
+(fn x => x) 10

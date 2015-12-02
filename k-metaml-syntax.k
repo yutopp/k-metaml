@@ -7,14 +7,33 @@
 //
 
 module K-METAML-SYNTAX
-  syntax Value ::= Int | Bool | Id
+  syntax Program ::= Term
+                   | "val" Id "=" Term ";" Program
+                   | Empty
 
-  syntax Term ::= Value
+  syntax Empty ::= ""   [klabel('Empty), notInRules, notInGround]
+
+  syntax Unit ::= "(" ")"
+
+  syntax Term ::= Int | Bool | Id | Unit
                 | "(" Term ")"              [bracket]
-                | Term Term                 [strict, left]
-                > Term "+" Term             [seqstrict, left]
-                > "<" Term ">"
+
                 > "~" Term
+
+                > Term Term                 [left]
+
+                | "<" Term ">"
+
+                > Term "*" Term             [seqstrict, left]
+                | Term "/" Term             [seqstrict, left]
+
+                > Term "+" Term             [seqstrict, left]
+                | Term "-" Term             [seqstrict, left]
+
+                > "fn" Id Rest Term
+
                 > "run" Term
-                | "lambda" Id "." Term      [binder]
+
+  syntax Dot ::= "=>"
+  syntax Rest  ::= Id Rest | Dot
 endmodule

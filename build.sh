@@ -2,42 +2,29 @@
 
 # for debugging
 
+BUILD_STATIC=1
+BUILD_DYNAMIC=1
+
 cur=$(pwd)
 
-#kompile --backend java hoge.k && echo "compiled" && krun --symbolic-execution --pattern '<k> V:TypeTRI </k>' input_esc.a
-#kompile hoge.k && echo "compiled" || exit -1
+if [ $BUILD_STATIC = 1 ]; then
+    cd static
+    echo "compiling static..."
 
-#cd static
-#echo "static"
-#
-#kompile k-metaml-typing.k && echo "compiled static" || exit -1
-##kdoc --debug --format html --doc-style=""|| exit -2
-##kdoc --debug --format html || exit -2
-#
-#for fname in ../inputs/*.a; do
-#    echo "===== K run => $fname ====="
-#
-#    krun --symbolic-execution --debug $fname
-#
-#    echo ""
-#done
-#
-#cd $cur
+    kompile k-metaml-typing.k && echo "compiled static" || exit -1
+    (kdoc --format pdf || exit -2) && mv k-metaml-typing.pdf ../.
+    (kdoc --format latex || exit -2) && mv k-metaml-typing.tex ../.
 
+    cd $cur
+fi
 
-cd dynamic
-echo "dynamic"
+if [ $BUILD_DYNAMIC = 1 ]; then
+    cd dynamic
+    echo "compiling dynamic..."
 
-kompile k-metaml-exec.k && echo "compiled dynamic" || exit -1
-#kdoc --debug --format html --doc-style=""|| exit -2
-#kdoc --debug --format html || exit -2
+    kompile k-metaml-exec.k && echo "compiled dynamic" || exit -1
+    (kdoc --format pdf || exit -2) && mv k-metaml-exec.pdf ../.
+    (kdoc --format latex || exit -2) && mv k-metaml-exec.tex ../.
 
-for fname in ../inputs/*.a; do
-    echo "===== K run => $fname ====="
-
-    krun --symbolic-execution -c VENV='.Map[e <- Real(<<5>>)]' --debug $fname
-
-    echo ""
-done
-
-cd $cur
+    cd $cur
+fi

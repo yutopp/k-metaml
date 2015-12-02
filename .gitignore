@@ -1,1 +1,11 @@
+.kompile-*
 *-kompiled
+
+*.sty
+*.tex
+*.pdf
+*.aux
+*.dvi
+*.log
+*.mrk
+*.ps

@@ -1,1 +1,1 @@
-<lambda x.(~(run <x>))>
+<fn x => (~(run <x>))>

@@ -1,0 +1,3 @@
+val g = <fn x => x * 5>;
+val h = <fn x => (~g x) - 2>;
+h
