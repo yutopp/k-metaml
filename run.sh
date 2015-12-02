@@ -5,7 +5,7 @@
 RUN_STATIC=1
 RUN_DYNAMIC=1
 
-INPUT_PATTERN="../inputs/*val1.a"
+INPUT_PATTERN="../inputs/*.a"
 cur=$(pwd)
 
 if [ $RUN_STATIC = 1 ]; then
