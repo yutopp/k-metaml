@@ -1,0 +1,3 @@
+val f = fn x => x;
+fun g (x) = f x;
+g

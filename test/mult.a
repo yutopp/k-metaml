@@ -1,0 +1,7 @@
+fun mult (x, n) = if n = 0
+                  then <1>
+                  else <~x * ~(mult x (n - 1))>;
+
+val cube = <fn y => ~(mult <y> 3)>;
+
+fun exponent (n) = <fn y => ~(mult <y> n)>;

@@ -1,0 +1,2 @@
+fun yo (x, y) = x + y;
+yo 10 20

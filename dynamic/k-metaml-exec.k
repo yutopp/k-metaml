@@ -6,27 +6,23 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-require "../k-metaml-syntax.k"
+require "k-metaml-exec-syntax.k"
+require "k-metaml-exec-to-string.k"
 
 module K-METAML-EXEC
-  imports K-METAML-SYNTAX
-
-  syntax Term ::= Sym(Id) | Real(Term)
-  syntax Term ::= "%" Term
-
-  syntax Term ::= "$fn_rec" Id Id FnParamRest Term
+  imports K-METAML-EXEC-SYNTAX-EXTEND
+  imports K-METAML-EXEC-TO-STRING
 
   syntax CType ::= "$tag$v" | "$tag$e"
   syntax KItem ::= conv(Term, CType)
   syntax KItem ::= "EOE"
-
 
   syntax KResult ::= Term
 
   configuration <k> $PGM:Program ~> EOE </k>
                 <level> 0 </level>
                 <venv> $VENV:Map </venv>
-
+                <out color="green" stream="stdout"> .List </out>
 
   syntax KItem ::= isValue(Term, Int)   [function, boolOperation]
 
@@ -73,6 +69,7 @@ module K-METAML-EXEC
   rule <k> conv(V:Term, $tag$v) ~> valMid(X, E2) => E2 ... </k>
        <level> 0 </level>
        <venv> VEnv => VEnv[X <- Real(V)] </venv>
+       <out> ... .List => ListItem("val " +String Id2String(X) +String " = " +String Term2String(V) +String "\n") </out>
 
 
   // Top level : val rec
@@ -83,7 +80,8 @@ module K-METAML-EXEC
        <venv> VEnv => VEnv[X <- Sym(!XX)] </venv>
   rule <k> conv(V:Term, $tag$v) ~> valMidRec(X, XX, VEnv, E2) => E2 ... </k>
        <level> 0 </level>
-       <venv> _ => VEnv[X <- Real(V)][XX <- Real(V)] </venv>
+       <venv> _ => VEnv[X <- RealRef(V, XX)][XX <- Real(V)] </venv>
+       <out> ... .List => ListItem("val " +String Id2String(X) +String " = " +String Term2String(V) +String "\n") </out>
 
 
   // Top level : fun
@@ -234,18 +232,25 @@ module K-METAML-EXEC
        <level> 0 </level>
        <venv> _ => VEnv </venv>
 
-  syntax KItem ::= app0TmpRec(Term, Term) | app0MedRec(Id, Id, Term, Map)
+
+  syntax RecPair ::= recPair(Id, Term)
+  syntax KItem ::= app0TmpRec(Term, Term)   // (Val, RefId), Arg
+                 | app0MedRec(Id, Id, Term, Map)  // Param, BindId, Body, VEnv
+
   rule <k> conv($fn_rec BindN:Id X:Id => E:Term, _) ~> app0First(E2:Term, VEnv) =>
                        E2 ~> app0MedRec(X, BindN, E:Term, VEnv) ... </k>
        <level> 0 </level>
   rule <k> conv(V2:Term, $tag$v) ~> app0MedRec(X, BindN, E, VEnv) =>
-                         app0TmpRec(V2, Val) ~> app0MedRec(X, BindN, E, VEnv) ... </k>
+            app0TmpRec(RealRef(Val, SymId), V2) ~> app0MedRec(X, BindN, E, VEnv) ... </k>
        <level> 0 </level>
-       <venv> ... BindN |-> Val ... </venv>
-  rule <k> app0TmpRec(V2, RecVal) ~> app0MedRec(X, BindN, E, VEnv) =>
-                         E ~> app0End(VEnv) ... </k>
+       <venv> ... BindN |-> RealRef(Val, SymId) ... </venv>
+  rule <k> app0TmpRec(RealRef(Val, SymId), V2) ~> app0MedRec(X, BindN, E, VEnv) =>
+            E ~> app0End(VEnv) ... </k>
        <level> 0 </level>
-       <venv> _ => .Map[X <- Real(V2)][BindN <- RecVal] </venv>
+       <venv> _ => .Map[X <- Real(V2)]
+                       [BindN <- RealRef(Val, SymId)]
+                       [SymId <- Real(Val)]
+       </venv>
 
 
   // App n+1
@@ -267,6 +272,9 @@ module K-METAML-EXEC
   rule <k> X:Id => sup(V) ... </k>
        <venv> ... X |-> Real(V) ... </venv>
        <level> 0 </level>
+  rule <k> X:Id => sup(V) ... </k>
+       <venv> ... X |-> RealRef(V, _) ... </venv>
+       <level> 0 </level>
 
   // SVar n+1
   rule <k> X:Id => sup(X) ... </k>
@@ -282,6 +290,10 @@ module K-METAML-EXEC
   // RVar n+1
   rule <k> X:Id => sup(%V) ... </k>
        <venv> ... X |-> Real(V) ... </venv>
+       <level> N </level>
+       when N >=Int 1
+  rule <k> X:Id => sup(%V) ... </k>
+       <venv> ... X |-> RealRef(V, _) ... </venv>
        <level> N </level>
        when N >=Int 1
 
