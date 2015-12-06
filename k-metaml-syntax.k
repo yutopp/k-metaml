@@ -30,10 +30,14 @@ module K-METAML-SYNTAX
                 > Term "+" Term             [seqstrict, left]
                 | Term "-" Term             [seqstrict, left]
 
-                > "fn" Id Rest Term
+                > Term "=" Term             [seqstrict, left]
+
+                > "if" Term "then" Term "else" Term     [strict(1)]
+
+                > "fn" Id FnParamRest Term
 
                 > "run" Term
 
-  syntax Dot ::= "=>"
-  syntax Rest  ::= Id Rest | Dot
+  syntax FnSep ::= "=>"
+  syntax FnParamRest  ::= Id FnParamRest | FnSep
 endmodule

@@ -67,6 +67,13 @@ module K-METAML-TYPING
   rule T1:Type * T2:Type => T1 =?= int ~> T2 =?= int ~> int
   rule T1:Type / T2:Type => T1 =?= int ~> T2 =?= int ~> int
 
+  rule T1:Type = T2:Type => T1 =?= T2 ~> bool
+
+  // if
+  syntax KItem ::= ifThen(Term) | ifElse(Type)
+  rule if bool:Type then E1:Term else E2:Term => E1 ~> ifThen(E2)
+  rule T1:Type ~> ifThen(E2) => E2 ~> ifElse(T1)
+  rule T2:Type ~> ifElse(T1) => T1 =?= T2 ~> T1     // or T2
 
   // Br n
   syntax KItem ::= brEnd(Int) // Ndepth
@@ -78,7 +85,7 @@ module K-METAML-TYPING
        when BN ==Int (N +Int 1)
 
 
-  rule fn X:Id (N Xs):Rest E:Term => fn X (=>) (fn N Xs E) [macro]
+  rule fn X:Id (N Xs):FnParamRest E:Term => fn X (=>) (fn N Xs E) [macro]
 
   // Abs n
   syntax KItem ::= absEnd(Type, Int, Int, Map) // TypeEnv

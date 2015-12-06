@@ -84,38 +84,50 @@ module K-METAML-EXEC
        when N >=Int 0
 
 
-  // AExp
+  // BinOp
   syntax KItem ::= binOP1(String, Term) | binOP2(Term, String)
+  rule conv(T1:Term, _) ~> binOP1(Op, T2) => T2 ~> binOP2(T1, Op)   [structural]
 
   rule <k> T1:Term + T2:Term => T1 ~> binOP1("+", T2) ... </k>
        <level> N </level>
        when N >=Int 0
-  rule <k> T1:Term - T2:Term => T1 ~> binOP1("-", T2) ... </k>
-       <level> N </level>
-       when N >=Int 0
-  rule <k> T1:Term * T2:Term => T1 ~> binOP1("*", T2) ... </k>
-       <level> N </level>
-       when N >=Int 0
-  rule <k> T1:Term / T2:Term => T1 ~> binOP1("/", T2) ... </k>
-       <level> N </level>
-       when N >=Int 0
-  rule conv(T1:Term, _) ~> binOP1(Op, T2) => T2 ~> binOP2(T1, Op)   [structural]
-
   rule conv(T2, _) ~> binOP2(T1, "+") => conv(T1 + T2, $tag$e)     [structural]
   rule conv(I1:Int + I2:Int, _) => conv(I1 +Int I2, $tag$v)
 
+  rule <k> T1:Term - T2:Term => T1 ~> binOP1("-", T2) ... </k>
+       <level> N </level>
+       when N >=Int 0
   rule conv(T2, _) ~> binOP2(T1, "-") => conv(T1 - T2, $tag$e)     [structural]
   rule conv(I1:Int - I2:Int, _) => conv(I1 -Int I2, $tag$v)
 
+  rule <k> T1:Term * T2:Term => T1 ~> binOP1("*", T2) ... </k>
+       <level> N </level>
+       when N >=Int 0
   rule conv(T2, _) ~> binOP2(T1, "*") => conv(T1 * T2, $tag$e)     [structural]
   rule conv(I1:Int * I2:Int, _) => conv(I1 *Int I2, $tag$v)
 
+  rule <k> T1:Term / T2:Term => T1 ~> binOP1("/", T2) ... </k>
+       <level> N </level>
+       when N >=Int 0
   rule conv(T2, _) ~> binOP2(T1, "/") => conv(T1 / T2, $tag$e)     [structural]
   rule conv(I1:Int / I2:Int, _) => conv(I1 /Int I2, $tag$v) when I2 =/=Int 0
 
+  rule <k> T1:Term = T2:Term => T1 ~> binOP1("=", T2) ... </k>
+       <level> N </level>
+       when N >=Int 0
+  rule conv(T2, _) ~> binOP2(T1, "=") => conv(T1 = T2, $tag$e)     [structural]
+  rule conv(I1:Int = I2:Int, _) => conv(I1 =Int I2, $tag$v)
+
+
+  // if
+  syntax KItem ::= ifCond(Term, Term)
+  rule if C:Term then E1:Term else E2:Term => C ~> ifCond(E1, E2)   [structural]
+  rule conv(true, $tag$v)  ~> ifCond(E1, E2) => E1  [structural]
+  rule conv(false, $tag$v) ~> ifCond(E1, E2) => E2  [structural]
+
 
   // Abs 0
-  rule fn X:Id (N Xs):Rest E:Term => fn X => (fn N Xs E) [macro]
+  rule fn X:Id (N Xs):FnParamRest E:Term => fn X => (fn N Xs E) [macro]
 
   syntax KItem ::= abs0End(Id, Map, Int)
   rule <k> fn X:Id => E:Term => E ~> abs0End(!XX, VEnv, 0) ... </k>
