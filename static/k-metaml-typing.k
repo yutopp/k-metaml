@@ -31,6 +31,7 @@ module K-METAML-TYPING
 
   syntax TypeSchema ::= "(" "forall" Set ")" TypeTRI
 
+
   // Top level
   syntax KItem ::= valMid(Id, Int, Int, Program, Map) // Id, Run, H
   rule <k> val X:Id = E1:Term ; E2:Program => E1 ~> valMid(X, R, 99999, E2, TEnv) ... </k>
@@ -54,6 +55,23 @@ module K-METAML-TYPING
        <level> 0 </level>
        <run> R </run>
        <tenv> _ => TEnv </tenv>
+
+
+  // Top level : val rec
+  syntax Term ::= "$valrec" Id "=" Term ";" Program
+  rule <k> $valrec X:Id = E1:Term ; E2:Program => E1 ~> valMid(X, R, 99999, E2, TEnv) ... </k>
+       <level> 0 </level>
+       <run> R => R +Int 99999 </run>
+       <tenv> TEnv => TEnv[X <- (forall #metaVariables(?T1) -Set #metaVariables(TEnv)) typeTriple(?T1, R +Int 99999, 0)] </tenv>
+
+
+  // Top level : fun
+  rule fun X:Id ( P:Id, Ps:FunParams) = E:Term ; E2:Program
+           => $valrec X:Id = ($fn_impl (P, Ps) = E):Term ; E2    [macro]
+
+  syntax Term ::= "$fn_impl" FunParams "=" Term
+  rule $fn_impl (X:Id, Xs:FunParams) = E:Term => fn X (=>) ($fn_impl (Xs) = E)  [macro]
+  rule $fn_impl (.FunParams)         = E:Term => E                              [macro]
 
 
   // Int n

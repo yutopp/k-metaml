@@ -14,6 +14,8 @@ module K-METAML-EXEC
   syntax Term ::= Sym(Id) | Real(Term)
   syntax Term ::= "%" Term
 
+  syntax Term ::= "$fn_rec" Id Id FnParamRest Term
+
   syntax CType ::= "$tag$v" | "$tag$e"
   syntax KItem ::= conv(Term, CType)
   syntax KItem ::= "EOE"
@@ -32,15 +34,18 @@ module K-METAML-EXEC
   rule isValue(Id,  N) => true
 
   rule isValue(fn X:Id => E:Term, 0) => true
+  rule isValue($fn_rec BindN X:Id => E:Term, 0) => true
   rule isValue(< E:Term >       , 0) => true when isValue(E, 1)
 
   rule isValue(E1:Term E2:Term, 1) => true when isValue(E1, 1) andBool isValue(E2, 1)
   rule isValue(fn X:Id => E:Term, 1) => true when isValue(E, 1)
+  rule isValue($fn_rec BindN X:Id => E:Term, 1) => true when isValue(E, 1)
   rule isValue(< E:Term >, 1) => true when isValue(E, 2)
   rule isValue(run E:Term, 1) => true when isValue(E, 1)
 
   rule isValue(E1:Term E2:Term, N2) => true when N2 >=Int 2 andBool isValue(E1, N2) andBool isValue(E2, N2)
   rule isValue(fn X:Id => E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
+  rule isValue($fn_rec BindN X:Id => E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
   rule isValue(< E:Term >, N2) => true when N2 >=Int 2 andBool isValue(E, N2 +Int 1)
   rule isValue(~ E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2 -Int 1)
   rule isValue(run E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
@@ -68,6 +73,27 @@ module K-METAML-EXEC
   rule <k> conv(V:Term, $tag$v) ~> valMid(X, E2) => E2 ... </k>
        <level> 0 </level>
        <venv> VEnv => VEnv[X <- Real(V)] </venv>
+
+
+  // Top level : val rec
+  syntax KItem ::= valMidRec(Id, Id, Map, Program) // Rest
+  syntax Term ::= "$valrec" Id "=" Term ";" Program
+  rule <k> $valrec X:Id = E1:Term ; E2:Program => E1 ~> valMidRec(X, !XX, VEnv, E2) ... </k>
+       <level> 0 </level>
+       <venv> VEnv => VEnv[X <- Sym(!XX)] </venv>
+  rule <k> conv(V:Term, $tag$v) ~> valMidRec(X, XX, VEnv, E2) => E2 ... </k>
+       <level> 0 </level>
+       <venv> _ => VEnv[X <- Real(V)][XX <- Real(V)] </venv>
+
+
+  // Top level : fun
+  rule fun X:Id ( P:Id, Px:FunParams ) = E:Term ; E2:Program
+           => $valrec X:Id = $fn_impl X (P, Px) = E ; E2        [macro]
+
+  syntax Term ::= "$fn_impl" Id FunParams "=" Term
+  rule $fn_impl BindN:Id (X:Id, Xs:FunParams) = E:Term =>
+                $fn_rec BindN X (=>) ($fn_impl BindN (Xs) = E)  [macro]
+  rule $fn_impl BindN:Id (.FunParams) = E:Term => E             [macro]
 
 
   // Termination
@@ -127,8 +153,23 @@ module K-METAML-EXEC
   // if
   syntax KItem ::= ifCond(Term, Term)
   rule if C:Term then E1:Term else E2:Term => C ~> ifCond(E1, E2)   [structural]
-  rule conv(true, $tag$v)  ~> ifCond(E1, E2) => E1  [structural]
-  rule conv(false, $tag$v) ~> ifCond(E1, E2) => E2  [structural]
+  rule <k> conv(true, $tag$v)  ~> ifCond(E1, E2) => E1 ... </k>
+       <level> 0 </level>   [structural]
+  rule <k> conv(false, $tag$v) ~> ifCond(E1, E2) => E2 ... </k>
+       <level> 0 </level>   [structural]
+
+  syntax KItem ::= ifThenN(Term, Term, Int) | ifElseN(Term, Term, Int)
+  rule <k> conv(C, _) ~> ifCond(E1, E2) => E1 ~> ifThenN(C, E2, N) ... </k>
+       <level> N </level>
+       when N >=Int 1   [structural]
+
+  rule <k> conv(E1, _) ~> ifThenN(C, E2, N) => E2 ~> ifElseN(C, E1, N) ... </k>
+       <level> N </level>
+       when N >=Int 1   [structural]
+
+  rule <k> conv(E2, _) ~> ifElseN(C, E1, N) => sup(if C then E1 else E2) ... </k>
+       <level> N </level>
+       when N >=Int 1   [structural]
 
 
   // Abs 0
@@ -143,16 +184,40 @@ module K-METAML-EXEC
        <level> 1 => 0 </level>
        <venv> _ => VEnv </venv>
 
+  syntax KItem ::= abs0EndRec(Id, Id, Map, Int)
+  rule <k> $fn_rec BindN:Id X:Id => E:Term => E ~> abs0EndRec(!XX, BindN, VEnv, 0) ... </k>
+       <level> 0 => 1 </level>
+       <venv> VEnv => VEnv[X <- Sym(!XX)] </venv>
+
+  rule <k> conv(E1, _) ~> abs0EndRec(XX, BindN, VEnv, 0) =>
+                    sup($fn_rec BindN XX => E1) ... </k>
+       <level> 1 => 0 </level>
+       <venv> _ => VEnv </venv>
+
   // Abs n+1
-  rule <k> fn X:Id => E:Term => E ~> abs0End(!XX, VEnv, N) ... </k>
+  syntax KItem ::= absNEnd(Id, Map, Int)
+  rule <k> fn X:Id => E:Term => E ~> absNEnd(!XX, VEnv, N) ... </k>
        <level> N </level>
        <venv> VEnv => VEnv[X <- Sym(!XX)] </venv>
        when N >=Int 1
 
-  rule <k> conv(E1, _) ~> abs0End(XX, VEnv, N) => sup(fn XX => E1) ... </k>
+  rule <k> conv(E1, _) ~> absNEnd(XX, VEnv, N) => sup(fn XX => E1) ... </k>
        <level> N </level>
        <venv> _ => VEnv </venv>
        when N >=Int 1
+
+  syntax KItem ::= absNEndRec(Id, Id, Map, Int)
+  rule <k> $fn_rec BindN:Id X:Id => E:Term => E ~> absNEndRec(!XX, BindN, VEnv, N) ... </k>
+       <level> N </level>
+       <venv> VEnv => VEnv[X <- Sym(!XX)] </venv>
+       when N >=Int 1
+
+  rule <k> conv(E1, _) ~> absNEndRec(XX, BindN, VEnv, N) =>
+                    sup($fn_rec BindN XX => E1) ... </k>
+       <level> N </level>
+       <venv> _ => VEnv </venv>
+       when N >=Int 1
+
 
   // App 0
   syntax KItem ::= app0First(Term, Map) | app0Med(Id, Term, Map) | app0End(Map)
@@ -162,14 +227,25 @@ module K-METAML-EXEC
 
   rule <k> conv(fn X:Id => E:Term, _) ~> app0First(E2:Term, VEnv) => E2 ~> app0Med(X, E:Term, VEnv) ... </k>
        <level> 0 </level>
-
   rule <k> conv(V2:Term, $tag$v) ~> app0Med(X, E, VEnv) => E ~> app0End(VEnv) ... </k>
        <level> 0 </level>
        <venv> _ => .Map[X <- Real(V2)] </venv>
-
   rule <k> conv(V:Term, $tag$v) ~> app0End(VEnv) => conv(V, $tag$v) ... </k>
        <level> 0 </level>
        <venv> _ => VEnv </venv>
+
+  syntax KItem ::= app0TmpRec(Term, Term) | app0MedRec(Id, Id, Term, Map)
+  rule <k> conv($fn_rec BindN:Id X:Id => E:Term, _) ~> app0First(E2:Term, VEnv) =>
+                       E2 ~> app0MedRec(X, BindN, E:Term, VEnv) ... </k>
+       <level> 0 </level>
+  rule <k> conv(V2:Term, $tag$v) ~> app0MedRec(X, BindN, E, VEnv) =>
+                         app0TmpRec(V2, Val) ~> app0MedRec(X, BindN, E, VEnv) ... </k>
+       <level> 0 </level>
+       <venv> ... BindN |-> Val ... </venv>
+  rule <k> app0TmpRec(V2, RecVal) ~> app0MedRec(X, BindN, E, VEnv) =>
+                         E ~> app0End(VEnv) ... </k>
+       <level> 0 </level>
+       <venv> _ => .Map[X <- Real(V2)][BindN <- RecVal] </venv>
 
 
   // App n+1

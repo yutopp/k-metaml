@@ -9,6 +9,7 @@
 module K-METAML-SYNTAX
   syntax Program ::= Term
                    | "val" Id "=" Term ";" Program
+                   | "fun" Id "(" FunParams ")" "=" Term ";" Program
                    | Empty
 
   syntax Empty ::= ""   [klabel('Empty), notInRules, notInGround]
@@ -39,5 +40,7 @@ module K-METAML-SYNTAX
                 > "run" Term
 
   syntax FnSep ::= "=>"
-  syntax FnParamRest  ::= Id FnParamRest | FnSep
+  syntax FnParamRest ::= FnSep | Id FnParamRest
+
+  syntax FunParams ::= List{Id, ","}
 endmodule
