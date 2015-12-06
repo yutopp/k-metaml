@@ -7,9 +7,11 @@
 //
 
 require "../k-metaml-syntax.k"
+require "modules/unification.k"
 
 module K-METAML-TYPING
   imports K-METAML-SYNTAX
+  imports UNIFICATION
 
   syntax Type ::= "int" | "bool" | "unit"
                 | Type "->" Type
@@ -26,29 +28,32 @@ module K-METAML-TYPING
                 <run> 0 </run>
                 <tenv> .Map </tenv>
 
+
+  syntax TypeSchema ::= "(" "forall" Set ")" TypeTRI
+
   // Top level
-  syntax KItem ::= valMid(Int, Int, Type, Term, Map) // Run, H, T, Term, VEnv
-  rule <k> val X:Id = E1:Term ; E2:Program => E2 ~> valMid(R, 99999, ?T1, E1, VEnv) ... </k>
+  syntax KItem ::= valMid(Id, Int, Int, Program, Map) // Id, Run, H
+  rule <k> val X:Id = E1:Term ; E2:Program => E1 ~> valMid(X, R, 99999, E2, TEnv) ... </k>
        <level> 0 </level>
-       <run> R </run>
-       <tenv> VEnv => VEnv[X <- typeTriple(?T1, R +Int 99999, 0)] </tenv>
+       <run> R => R +Int 99999 </run>
+       <tenv> TEnv </tenv>
 
-  syntax KItem ::= valEnd(Int, Int, Type, Type, Map) // Run, H, T, T1
-  rule <k> T:Type ~> valMid(R, H, T1, E1, VEnv) => E1 ~> valEnd(R, H, T, T1, VEnv) ... </k>
-       <level> 0 </level>
-       <run> R => R +Int H </run>
-       <tenv> _ => VEnv </tenv>
-
-  rule <k> _:Empty ~> valMid(R, H, T1, E1, VEnv) => E1 ~> valEnd(R, H, unit, T1, VEnv) ... </k>
-       <level> 0 </level>
-       <run> R => R +Int H </run>
-       <tenv> _ => VEnv </tenv>
-
-  rule <k> T1:Type ~> valEnd(R, H, T, T1, VEnv) => T ... </k>
+  syntax KItem ::= valEnd(Int, Map) //
+  rule <k> T1:Type ~> valMid(X, R, H, E2, TEnv) => E2 ~> valEnd(R, TEnv) ... </k>
        <level> 0 </level>
        <run> BR => R </run>
-       <tenv> _ => VEnv </tenv>
-       when BR ==Int (R +Int H)
+       <tenv> _ => TEnv[X <- (forall #metaVariables(T1) -Set #metaVariables(TEnv)) typeTriple(T1, R +Int H, 0)] </tenv>
+       when BR =Int (R +Int H)
+
+  rule <k> T:Type ~> valEnd(R, TEnv) => T ... </k>
+       <level> 0 </level>
+       <run> R </run>
+       <tenv> _ => TEnv </tenv>
+
+  rule <k> _:Empty ~> valEnd(R, TEnv) => unit ... </k>
+       <level> 0 </level>
+       <run> R </run>
+       <tenv> _ => TEnv </tenv>
 
 
   // Int n
@@ -61,7 +66,7 @@ module K-METAML-TYPING
   rule _:Unit => unit:Type      [structural]
 
 
-  // AExp
+  // Bin Op
   rule T1:Type + T2:Type => T1 =?= int ~> T2 =?= int ~> int
   rule T1:Type - T2:Type => T1 =?= int ~> T2 =?= int ~> int
   rule T1:Type * T2:Type => T1 =?= int ~> T2 =?= int ~> int
@@ -69,11 +74,13 @@ module K-METAML-TYPING
 
   rule T1:Type = T2:Type => T1 =?= T2 ~> bool
 
+
   // if
   syntax KItem ::= ifThen(Term) | ifElse(Type)
   rule if bool:Type then E1:Term else E2:Term => E1 ~> ifThen(E2)
   rule T1:Type ~> ifThen(E2) => E2 ~> ifElse(T1)
   rule T2:Type ~> ifElse(T1) => T1 =?= T2 ~> T1     // or T2
+
 
   // Br n
   syntax KItem ::= brEnd(Int) // Ndepth
@@ -106,6 +113,12 @@ module K-METAML-TYPING
        <level> N </level>
        <run> R </run>
        when (XN +Int R) <=Int (N +Int XR)
+  rule <k> X:Id => #rename(XType, Tvs) ... </k>
+       <tenv>... X |-> (forall Tvs) typeTriple(XType, XR, XN) ... </tenv>
+       <level> N </level>
+       <run> R </run>
+       when (XN +Int R) <=Int (N +Int XR)
+
 
   // Esc n+1
   syntax KItem ::= escEnd(Int) // Level
@@ -131,6 +144,7 @@ module K-METAML-TYPING
   rule <k> RT:Type ~> appEnd(N, R, T1, T) => T1 =?= RT ~> T ... </k>
        <level> N </level>
        <run> R </run>
+
 
   // run n
   syntax KItem ::= runEnd(Int) // Level, Run
