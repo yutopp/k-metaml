@@ -83,6 +83,11 @@ module K-METAML-EXEC
        <level> N </level>
        when N >=Int 0
 
+  // Bool
+  rule <k> B:Bool => conv(B, $tag$v) ... </k>
+       <level> N </level>
+       when N >=Int 0
+
 
   // BinOp
   syntax KItem ::= binOP1(String, Term) | binOP2(Term, String)
