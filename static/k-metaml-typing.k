@@ -6,21 +6,15 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-require "../k-metaml-syntax.k"
+require "k-metaml-typing-syntax.k"
+require "k-metaml-typing-to-string.k"
 require "modules/unification.k"
 
 module K-METAML-TYPING
-  imports K-METAML-SYNTAX
+  imports K-METAML-TYPING-SYNTAX-EXTEND
+  imports K-METAML-TYPING-TO-STRING
   imports UNIFICATION
 
-  syntax Type ::= "int" | "bool" | "unit"
-                | Type "->" Type
-                > "#<#" Type "#>#"          // code
-                > "(" Type ")"              [bracket]
-
-  syntax TypeTRI ::= typeTriple(Type, Int, Int)   // Type, R, N
-
-  syntax Term ::= Type
   syntax KResult ::= Type
 
   configuration <k> $PGM:Program </k>
@@ -28,9 +22,10 @@ module K-METAML-TYPING
                 <run> 0 </run>
                 <tenv> .Map </tenv>
 
+                <out color="green" stream="stdout"> .List </out>
+                <typeVarNameMap> .Map </typeVarNameMap>
 
   syntax TypeSchema ::= "(" "forall" Set ")" TypeTRI
-
 
   // Top level
   syntax KItem ::= valMid(Id, Int, Int, Program, Map) // Id, Run, H
@@ -44,6 +39,8 @@ module K-METAML-TYPING
        <level> 0 </level>
        <run> BR => R </run>
        <tenv> _ => TEnv[X <- (forall #metaVariables(T1) -Set #metaVariables(TEnv)) typeTriple(T1, R +Int H, 0)] </tenv>
+       <out> ... .List => ListItem("val " +String Id2String(X) +String " : " +String Type2String(T1, TVM) +String "\n") </out>
+       <typeVarNameMap> TVM </typeVarNameMap>
        when BR =Int (R +Int H)
 
   rule <k> T:Type ~> valEnd(R, TEnv) => T ... </k>
@@ -63,6 +60,7 @@ module K-METAML-TYPING
        <level> 0 </level>
        <run> R => R +Int 99999 </run>
        <tenv> TEnv => TEnv[X <- (forall #metaVariables(?T1) -Set #metaVariables(TEnv)) typeTriple(?T1, R +Int 99999, 0)] </tenv>
+       <typeVarNameMap> TVM => TVM[?T1 <- !T1N:Int] </typeVarNameMap>
 
 
   // Top level : fun
@@ -85,19 +83,19 @@ module K-METAML-TYPING
 
 
   // Bin Op
-  rule T1:Type + T2:Type => T1 =?= int ~> T2 =?= int ~> int
-  rule T1:Type - T2:Type => T1 =?= int ~> T2 =?= int ~> int
-  rule T1:Type * T2:Type => T1 =?= int ~> T2 =?= int ~> int
-  rule T1:Type / T2:Type => T1 =?= int ~> T2 =?= int ~> int
+  rule T1:Type + T2:Type => T1 =!= int ~> T2 =!= int ~> int
+  rule T1:Type - T2:Type => T1 =!= int ~> T2 =!= int ~> int
+  rule T1:Type * T2:Type => T1 =!= int ~> T2 =!= int ~> int
+  rule T1:Type / T2:Type => T1 =!= int ~> T2 =!= int ~> int
 
-  rule T1:Type = T2:Type => T1 =?= T2 ~> bool
+  rule T1:Type = T2:Type => T1 =!= T2 ~> bool
 
 
   // if
   syntax KItem ::= ifThen(Term) | ifElse(Type)
   rule if bool:Type then E1:Term else E2:Term => E1 ~> ifThen(E2)
   rule T1:Type ~> ifThen(E2) => E2 ~> ifElse(T1)
-  rule T2:Type ~> ifElse(T1) => T1 =?= T2 ~> T1     // or T2
+  rule T2:Type ~> ifElse(T1) => T1 =!= T2 ~> T1     // or T2
 
 
   // Br n
@@ -118,6 +116,7 @@ module K-METAML-TYPING
        <tenv> Rho => Rho[X <- typeTriple(?T1, R, N)] </tenv>
        <level> N </level>
        <run> R </run>
+       <typeVarNameMap> TVM => TVM[?T1 <- !T1N:Int] </typeVarNameMap>
 
   rule <k> T2:Type ~> absEnd(T1, N, R, Rho) => T1 -> T2 ... </k>
        <level> N </level>
@@ -155,11 +154,12 @@ module K-METAML-TYPING
        <level> N </level>
        <run> R </run>
 
-  rule <k> LT:Type ~> appMid(N, R, E2) => LT =?= (?T1 -> ?T) ~> E2 ~> appEnd(N, R, ?T1, ?T) ... </k>
+  rule <k> LT:Type ~> appMid(N, R, E2) => LT =!= (?T1 -> ?T) ~> E2 ~> appEnd(N, R, ?T1, ?T) ... </k>
        <level> N </level>
        <run> R </run>
+       <typeVarNameMap> TVM => TVM[?T1 <- !T1N:Int][?T <- !TN:Int] </typeVarNameMap>
 
-  rule <k> RT:Type ~> appEnd(N, R, T1, T) => T1 =?= RT ~> T ... </k>
+  rule <k> RT:Type ~> appEnd(N, R, T1, T) => T1 =!= RT ~> T ... </k>
        <level> N </level>
        <run> R </run>
 
@@ -174,7 +174,7 @@ module K-METAML-TYPING
 
 
   // unification...
-  syntax KItem ::= Type "=?=" Type
-  rule T =?= T => .K
+  syntax KItem ::= Type "=!=" Type
+  rule T =!= T => .K
 
 endmodule
