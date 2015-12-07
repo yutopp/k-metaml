@@ -4,4 +4,4 @@ Solution 1:
 N:Int -->
 -1
 V:Term -->
-fn _1 => _1
+fn _3 => _3

@@ -1,5 +1,6 @@
 .kompile-*
 *-kompiled
+*.err
 
 *.sty
 *.tex

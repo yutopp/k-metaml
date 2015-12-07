@@ -1,0 +1,7 @@
+Search results:
+
+Solution 1:
+N:Int -->
+-1
+V:Term -->
+$fn_rec fact _3 => if _3 = 0 then 1 else _3 * (_2 (_3 - 1))

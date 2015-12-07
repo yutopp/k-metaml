@@ -38,7 +38,14 @@ def auto_generate_testcase(filename, result)
 end
 
 # return: nil => Passed, String => Failed(error messages)
-def check_result(filename, result, tag)
+def check_result(filename, result, must_fail, tag)
+  if must_fail && !result.match(/^No search results$/)
+    s = ""
+    s << "This case must be failed (type unsafe)\n"
+
+    return s
+  end
+
   if File.exists?(filename)
     content = File.read(filename)
     if result != content
@@ -70,12 +77,14 @@ def check_result(filename, result, tag)
   end
 end
 
-def run_tests(test_dir, sem_dir, test_io_dir, filenames, options = {})
+def run_tests(test_dir, sem_dir, test_io_dir, filenames, fail_cases, is_dynamic, options = {})
   ops = make_option_string(options)
   num_of_tests = filenames.length
 
   Dir.chdir(sem_dir) do
     return filenames.map.with_index do |fname, index|
+      must_fail = fail_cases.include?(fname)
+
       abs_source_path = File.join(test_dir, fname)
 
       # abs_test_in = File.join(test_io_dir, "#{fname}.in")
@@ -84,7 +93,15 @@ def run_tests(test_dir, sem_dir, test_io_dir, filenames, options = {})
 
       puts "[ ] " + "-" * 40
       puts "[+] Running '#{abs_source_path}' (at #{sem_dir}) [#{index+1}/#{num_of_tests}]"
+      if must_fail
+        puts "[!] fail case"
+      end
       puts "[ ] " + "-" * 40
+
+      if is_dynamic && must_fail
+        puts "[o] SKIPPED: (type unsafe)"
+        next nil
+      end
 
       o, e, s = Open3.capture3("krun --search --debug #{ops} #{abs_source_path}")
       exec_err = nil
@@ -95,7 +112,7 @@ def run_tests(test_dir, sem_dir, test_io_dir, filenames, options = {})
         exec_err = s
       end
 
-      outres = check_result(abs_test_out, o, 'stdout')
+      outres = check_result(abs_test_out, o, must_fail, 'stdout')
       if outres.nil?
         puts "[o] PASS: (stdout)"
       else
@@ -103,7 +120,7 @@ def run_tests(test_dir, sem_dir, test_io_dir, filenames, options = {})
         puts outres
       end
 
-      errres = check_result(abs_test_err, e, 'stderr')
+      errres = check_result(abs_test_err, e, false, 'stderr')
       if errres.nil?
         puts "[o] PASS: (stderr)"
       else
@@ -141,9 +158,11 @@ def run_test(
   abs_static_test_dir = File.join(abs_test_dir, static_rel_dir)
   abs_dynamic_test_dir = File.join(abs_test_dir, dynamic_rel_dir)
 
+  fail_cases = File.read(File.join(abs_test_dir, "fail_cases.list")).split("\n")
+
   # run kompile
-  build(abs_static_sem_dir, static_fname)
-  build(abs_dynamic_sem_dir, dynamic_fname)
+  #build(abs_static_sem_dir, static_fname)
+  #build(abs_dynamic_sem_dir, dynamic_fname)
 
   # filenames
   fns = glob_code_filenames(abs_test_dir)
@@ -152,7 +171,7 @@ def run_test(
   puts ""
   puts "STATIC"
   puts ""
-  st = run_tests(abs_test_dir, abs_static_sem_dir, abs_static_test_dir, fns, {
+  st = run_tests(abs_test_dir, abs_static_sem_dir, abs_static_test_dir, fns, fail_cases, false, {
                    '--symbolic-execution' => nil,
                    '--pattern' => "'<k> V:Type </k> <level> N:Int </level>'"
                  })
@@ -166,7 +185,7 @@ def run_test(
   puts ""
   puts "DYNAMIC"
   puts ""
-  rt = run_tests(abs_test_dir, abs_dynamic_sem_dir, abs_dynamic_test_dir, fns, {
+  rt = run_tests(abs_test_dir, abs_dynamic_sem_dir, abs_dynamic_test_dir, fns, fail_cases, true, {
                    '-c' => "VENV='.Map'",
                    '--pattern' => "'<k> V:Term </k> <level> N:Int </level>'"
                  })
