@@ -12,7 +12,7 @@ module K-METAML-TYPING-SYNTAX-EXTEND
   imports K-METAML-SYNTAX
 
   syntax Type ::= "int" | "bool" | "unit"
-                | Type "->" Type
+                | Type "->" Type            [right]
                 | Type "list"
                 > "#<#" Type "#>#"          // code
                 > "(" Type ")"              [bracket]

@@ -47,6 +47,8 @@ module K-METAML-SYNTAX
   syntax BuiltinFn ::= "hd"
                      | "tl"
                      | "null"
+                     | "nth"
+                     | nthArg1(Term)
 
   syntax ListElems ::= List{Term, ","}
 

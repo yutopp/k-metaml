@@ -122,6 +122,11 @@ module K-METAML-TYPING
        <run> R </run>
        <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
 
+  rule <k> nth => (?T list) -> int -> ?T ... </k>
+       <level> N </level>
+       <run> R </run>
+       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
+
 
   // if
   syntax KItem ::= ifThen(Term) | ifElse(Type)

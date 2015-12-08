@@ -409,4 +409,9 @@ module K-METAML-EXEC
   // null
   rule $run_builtin(null, [(X, Xs):ListElems]) => sup(false)
   rule $run_builtin(null, [.ListElems])        => sup(true)
+
+  // nth V N
+  rule $run_builtin(nth, V:Term)                       => sup($builtin_fn(nthArg1(V)))
+  rule $run_builtin(nthArg1([X, Xs:ListElems]), 0)     => sup(X)
+  rule $run_builtin(nthArg1([X, Xs:ListElems]), N:Int) => $run_builtin(nthArg1([Xs]), N -Int 1)
 endmodule
