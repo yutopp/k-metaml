@@ -81,6 +81,21 @@ module K-METAML-TYPING
   // Unit n
   rule _:Unit => unit:Type      [structural]
 
+  // List
+  syntax KItem ::= listTerm(Int, Int, Type, ListElems)
+  rule <k> [ (E, Es):ListElems ] => E ~> listTerm(N, R, ?T, Es) ... </k>
+       <level> N </level>
+       <run> R </run>
+       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
+
+  rule <k> T:Type ~> listTerm(N, R, T, (E, Es):ListElems) => E ~> listTerm(N, R, T, Es) ... </k>
+       <level> N </level>
+       <run> R </run>
+
+  rule <k> T:Type ~> listTerm(N, R, T, .ListElems) => (T list):Type ... </k>
+       <level> N </level>
+       <run> R </run>
+
 
   // Bin Op
   rule T1:Type + T2:Type => T1 =!= int ~> T2 =!= int ~> int
@@ -89,6 +104,23 @@ module K-METAML-TYPING
   rule T1:Type / T2:Type => T1 =!= int ~> T2 =!= int ~> int
 
   rule T1:Type = T2:Type => T1 =!= T2 ~> bool
+  rule T1:Type '>' T2:Type => T1 =!= T2 ~> bool
+  rule T1:Type '<' T2:Type => T1 =!= T2 ~> bool
+
+  rule <k> hd => (?T list) -> ?T ... </k>
+       <level> N </level>
+       <run> R </run>
+       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
+
+  rule <k> tl => (?T list) -> (?T list) ... </k>
+       <level> N </level>
+       <run> R </run>
+       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
+
+  rule <k> null => (?T list) -> bool ... </k>
+       <level> N </level>
+       <run> R </run>
+       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
 
 
   // if
@@ -176,5 +208,4 @@ module K-METAML-TYPING
   // unification...
   syntax KItem ::= Type "=!=" Type
   rule T =!= T => .K
-
 endmodule

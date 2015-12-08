@@ -17,13 +17,14 @@ module K-METAML-SYNTAX
   syntax Unit ::= "(" ")"
 
   syntax Term ::= Int | Bool | Id | Unit
+                | BuiltinFn
+                | "[" ListElems "]"
                 | "(" Term ")"              [bracket]
+                | "<" Term ">"
 
                 > "~" Term
 
                 > Term Term                 [left]
-
-                | "<" Term ">"
 
                 > Term "*" Term             [seqstrict, left]
                 | Term "/" Term             [seqstrict, left]
@@ -32,12 +33,20 @@ module K-METAML-SYNTAX
                 | Term "-" Term             [seqstrict, left]
 
                 > Term "=" Term             [seqstrict, left]
+                > Term "'>'" Term           [seqstrict, left]
+                > Term "'<'" Term           [seqstrict, left]
 
                 > "if" Term "then" Term "else" Term     [strict(1)]
 
                 > "fn" Id FnParamRest Term
 
                 > "run" Term
+
+  syntax BuiltinFn ::= "hd"
+                     | "tl"
+                     | "null"
+
+  syntax ListElems ::= List{Term, ","}
 
   syntax FnSep ::= "=>"
   syntax FnParamRest ::= FnSep | Id FnParamRest
