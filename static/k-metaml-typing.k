@@ -140,6 +140,11 @@ module K-METAML-TYPING
        when BN ==Int (N +Int 1)
 
 
+  // Lift n
+  rule <k> lift E:Term => E ~> brEnd(N) ... </k>
+       <level> N => N +Int 1 </level>
+
+
   rule fn X:Id (N Xs):FnParamRest E:Term => fn X (=>) (fn N Xs E) [macro]
 
   // Abs n

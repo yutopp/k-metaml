@@ -41,6 +41,8 @@ module K-METAML-SYNTAX
                 > "fn" Id FnParamRest Term
 
                 > "run" Term
+                | "lift" Term
+
 
   syntax BuiltinFn ::= "hd"
                      | "tl"

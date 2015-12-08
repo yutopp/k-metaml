@@ -309,10 +309,10 @@ module K-METAML-EXEC
 
 
   // Bracket 0
-  syntax KItem ::= brkEnd0(Int)
-  rule <k> < E1:Term > => E1 ~> brkEnd0(0) ... </k>
+  syntax KItem ::= "brkEnd0"
+  rule <k> < E1:Term > => E1 ~> brkEnd0 ... </k>
        <level> 0 => 1 </level>
-  rule <k> $conv(E2:Term, _) ~> brkEnd0(0) => sup(< E2 >) ... </k>
+  rule <k> $conv(E2:Term, _) ~> brkEnd0 => sup(< E2 >) ... </k>
        <level> 1 => 0 </level>
 
   // Bracket n+1
@@ -323,6 +323,23 @@ module K-METAML-EXEC
   rule <k> $conv(E2:Term, _) ~> brkEndN(N) => sup(< E2 >) ... </k>
        <level> BN => N </level>
        when (N >=Int 1) andBool (BN ==Int (N +Int 1))
+
+
+  // Lift 0
+  syntax KItem ::= "liftEnd0"
+  rule <k> lift E1:Term => E1 ~> liftEnd0 ... </k>
+       <level> 0 </level>
+  rule <k> $conv(E2:Term, _) ~> liftEnd0 => sup(< E2 >) ... </k>
+       <level> 0 </level>
+
+  // Lift n+1
+  syntax KItem ::= liftEndN(Int)
+  rule <k> lift E1:Term => E1 ~> liftEndN(N) ... </k>
+       <level> N </level>
+       when N >=Int 1
+  rule <k> $conv(E2:Term, _) ~> liftEndN(N) => sup(< E2 >) ... </k>
+       <level> N </level>
+       when (N >=Int 1)
 
 
   // Escape 1
