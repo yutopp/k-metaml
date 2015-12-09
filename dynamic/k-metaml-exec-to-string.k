@@ -53,6 +53,7 @@ module K-METAML-EXEC-TO-STRING
         "fn " +String Id2String(P) +String " => " +String Term2String(E)
 
   rule Term2String(run E:Term) => "(run" +String Term2String(E) +String ")"
+  rule Term2String(lift E:Term) => "(lift" +String Term2String(E) +String ")"
 
   rule Term2String(% E:Term) => "%" +String Term2String(E)
 

@@ -311,7 +311,7 @@ module K-METAML-EXEC
   rule <k> lift E1:Term => E1 ~> liftEndN(N) ... </k>
        <level> N </level>
        when N >=Int 1
-  rule <k> $conv(E2:Term, _) ~> liftEndN(N) => sup(< E2 >) ... </k>
+  rule <k> $conv(E2:Term, _) ~> liftEndN(N) => sup(lift E2) ... </k>
        <level> N </level>
        when (N >=Int 1)
 
