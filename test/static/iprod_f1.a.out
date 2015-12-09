@@ -2,6 +2,6 @@ Search results:
 
 Solution 1:
 V:Type -->
-#<# #<# int #># #>#
+#<# int list -> #<# int list -> int #># #>#
 N:Int -->
 0

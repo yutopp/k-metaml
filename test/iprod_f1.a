@@ -1,0 +1,28 @@
+fun back (f) = <fn x => ~(f <x>)>;
+
+fun forth (f, x) = <~f ~x>;
+
+fun back2 (f) = <fn x => <fn y => ~~(f <x> <<y>>)>>;
+
+
+fun iprod (n, v, w) =
+    if n '>' 0
+    then ((nth v n) * (nth w n)) + (iprod (n - 1) v w)
+    else 0;
+
+fun iprod2 (n) = <fn v => <fn w =>
+    ~~(if n '>' 0
+          then << (~(lift nth v n) * (nth w n)) + (~(~(iprod2 (n - 1)) v) w) >>
+          else <<0>>)>>;
+
+fun p3 (n, v, w) =
+    if n '>' 0
+       then << (~(lift nth ~v n) * (nth ~~w n)) + ~~(p3 (n - 1) v w) >>
+       else <<0>>;
+
+fun iprod3 (n) = back2 (p3 n);
+
+
+val f1 = iprod3 3;
+
+f1

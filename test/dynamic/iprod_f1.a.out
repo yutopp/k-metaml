@@ -1,0 +1,11 @@
+Search results:
+
+Solution 1:
+N:Int -->
+-1
+V:Term -->
+< fn _49 => < fn _50 => ~ (lift (((% $builtin_fn ( nth )) _49) (% 3))) * (((
+  % $builtin_fn ( nth )) _50) (% 3)) + (~ (lift (((% $builtin_fn ( nth ))
+  _49) (% 2))) * (((% $builtin_fn ( nth )) _50) (% 2)) + (~ (lift (((%
+  $builtin_fn ( nth )) _49) (% 1))) * (((% $builtin_fn ( nth )) _50) (% 1))
+  + 0)) > >

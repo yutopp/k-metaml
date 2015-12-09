@@ -4,4 +4,4 @@ Solution 1:
 N:Int -->
 -1
 V:Term -->
-$mu _4 => fn _6 => (% $mu _1 => fn _3 => _3) _6
+$mu _1 => fn _3 => if _3 = 0 then 1 else _3 * (_1 (_3 - 1))
