@@ -317,17 +317,22 @@ module K-METAML-EXEC
 
 
   // Escape 1
-  syntax KItem ::= escEnd(Int)
-  rule <k> ~ E1:Term => E1 ~> escEnd(1) ... </k>
+  syntax KItem ::= "escEnd0"
+  rule <k> ~ E1:Term => E1 ~> escEnd0 ... </k>
        <level> 1 => 0 </level>
-  rule <k> $conv(< E2:Term >, _) ~> escEnd(1) => sup(E2) ... </k>
+  rule <k> $conv(< E2:Term >, _) ~> escEnd0 => sup(E2) ... </k>
        <level> 0 => 1 </level>
 
   // Escape n+2
-  rule <k> ~ E1:Term => E1 ~> escEnd(N) ... </k>
+  syntax KItem ::= escEndN(Int)
+  rule <k> ~ E1:Term => E1 ~> escEndN(N) ... </k>
        <level> N => N -Int 1 </level>
        when N >=Int 2
-  rule <k> $conv(E2, _) ~> escEnd(N) => sup(~ E2) ... </k>
+  // Escape n+2 (Optimized)
+  rule <k> $conv(< E2:Term >, _) ~> escEndN(N) => sup(E2) ... </k>
+       <level> BN => N </level>
+       when (N >=Int 2) andBool (BN ==Int (N -Int 1))
+  rule <k> $conv(E2:Term, _) ~> escEndN(N) => sup(~ E2) ... </k>
        <level> BN => N </level>
        when (N >=Int 2) andBool (BN ==Int (N -Int 1))
 
