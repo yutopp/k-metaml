@@ -165,7 +165,7 @@ def run_test(
   #build(abs_dynamic_sem_dir, dynamic_fname)
 
   # filenames
-  fns = glob_code_filenames(abs_test_dir)
+  fns = glob_code_filenames(abs_test_dir).sort
 
   # run tests
   puts ""
