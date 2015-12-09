@@ -22,8 +22,7 @@ module K-METAML-TYPING
                 <run> 0 </run>
                 <tenv> .Map </tenv>
 
-                <out color="green" stream="stdout"> .List </out>
-                <typeVarNameMap> .Map </typeVarNameMap>
+                <typeSymMap> .Map </typeSymMap>
 
   syntax TypeSchema ::= "(" "forall" Set ")" TypeTRI
 
@@ -39,8 +38,7 @@ module K-METAML-TYPING
        <level> 0 </level>
        <run> BR => R </run>
        <tenv> _ => TEnv[X <- (forall #metaVariables(T1) -Set #metaVariables(TEnv)) typeTriple(T1, R +Int H, 0)] </tenv>
-       <out> ... .List => ListItem("val " +String Id2String(X) +String " : " +String Type2String(T1, TVM) +String "\n") </out>
-       <typeVarNameMap> TVM </typeVarNameMap>
+       <typeSymMap> TsM => TsM[("val " +String Id2String(X)) <- T1] </typeSymMap>
        when BR =Int (R +Int H)
 
   rule <k> T:Type ~> valEnd(R, TEnv) => T ... </k>
@@ -60,7 +58,6 @@ module K-METAML-TYPING
        <level> 0 </level>
        <run> R => R +Int 99999 </run>
        <tenv> TEnv => TEnv[X <- (forall #metaVariables(?T1) -Set #metaVariables(TEnv)) typeTriple(?T1, R +Int 99999, 0)] </tenv>
-       <typeVarNameMap> TVM => TVM[?T1 <- !T1N:Int] </typeVarNameMap>
 
 
   // Top level : fun
@@ -86,7 +83,6 @@ module K-METAML-TYPING
   rule <k> [ (E, Es):ListElems ] => E ~> listTerm(N, R, ?T, Es) ... </k>
        <level> N </level>
        <run> R </run>
-       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
 
   rule <k> T:Type ~> listTerm(N, R, T, (E, Es):ListElems) => E ~> listTerm(N, R, T, Es) ... </k>
        <level> N </level>
@@ -110,22 +106,18 @@ module K-METAML-TYPING
   rule <k> hd => (?T list) -> ?T ... </k>
        <level> N </level>
        <run> R </run>
-       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
 
   rule <k> tl => (?T list) -> (?T list) ... </k>
        <level> N </level>
        <run> R </run>
-       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
 
   rule <k> null => (?T list) -> bool ... </k>
        <level> N </level>
        <run> R </run>
-       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
 
   rule <k> nth => (?T list) -> int -> ?T ... </k>
        <level> N </level>
        <run> R </run>
-       <typeVarNameMap> TVM => TVM[?T <- !T1N:Int] </typeVarNameMap>
 
 
   // if
@@ -158,7 +150,6 @@ module K-METAML-TYPING
        <tenv> Rho => Rho[X <- typeTriple(?T1, R, N)] </tenv>
        <level> N </level>
        <run> R </run>
-       <typeVarNameMap> TVM => TVM[?T1 <- !T1N:Int] </typeVarNameMap>
 
   rule <k> T2:Type ~> absEnd(T1, N, R, Rho) => T1 -> T2 ... </k>
        <level> N </level>
@@ -199,7 +190,6 @@ module K-METAML-TYPING
   rule <k> LT:Type ~> appMid(N, R, E2) => LT =!= (?T1 -> ?T) ~> E2 ~> appEnd(N, R, ?T1, ?T) ... </k>
        <level> N </level>
        <run> R </run>
-       <typeVarNameMap> TVM => TVM[?T1 <- !T1N:Int][?T <- !TN:Int] </typeVarNameMap>
 
   rule <k> RT:Type ~> appEnd(N, R, T1, T) => T1 =!= RT ~> T ... </k>
        <level> N </level>
