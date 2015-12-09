@@ -8,12 +8,15 @@
 
 require "k-metaml-exec-syntax.k"
 require "k-metaml-exec-to-string.k"
+require "modules/substitution.k"
 
 module K-METAML-EXEC
   imports K-METAML-EXEC-SYNTAX-EXTEND
   imports K-METAML-EXEC-TO-STRING
+  imports SUBSTITUTION
 
   syntax KResult ::= Term
+  syntax Variable ::= Id    // Variable is used in SUBSTITUTION
 
   configuration <k> $PGM:Program ~> EOE </k>
                 <level> 0 </level>
@@ -32,26 +35,14 @@ module K-METAML-EXEC
        <out> ... .List => ListItem("val " +String Id2String(X) +String " = " +String Term2String(V) +String "\n") </out>
 
 
-  // Top level : val rec
-  syntax KItem ::= valMidRec(Id, Id, Map, Program) // Rest
-  syntax Term ::= "$valrec" Id "=" Term ";" Program
-  rule <k> $valrec X:Id = E1:Term ; E2:Program => E1 ~> valMidRec(X, !XX, VEnv, E2) ... </k>
-       <level> 0 </level>
-       <venv> VEnv => VEnv[X <- Sym(!XX)] </venv>
-  rule <k> $conv(V:Term, $tag$v) ~> valMidRec(X, XX, VEnv, E2) => E2 ... </k>
-       <level> 0 </level>
-       <venv> _ => VEnv[X <- RealRef(V, XX)][XX <- Real(V)] </venv>
-       <out> ... .List => ListItem("val " +String Id2String(X) +String " = " +String Term2String(V) +String "\n") </out>
-
-
   // Top level : fun
   rule fun X:Id ( P:Id, Px:FunParams ) = E:Term ; E2:Program
-           => $valrec X:Id = $fn_impl X (P, Px) = E ; E2        [macro]
+           => val X = ($mu X => ($fn_impl (P, Px) = E)) ; E2      [macro]
 
-  syntax Term ::= "$fn_impl" Id FunParams "=" Term
-  rule $fn_impl BindN:Id (X:Id, Xs:FunParams) = E:Term =>
-                $fn_rec BindN X (=>) ($fn_impl BindN (Xs) = E)  [macro]
-  rule $fn_impl BindN:Id (.FunParams) = E:Term => E             [macro]
+  syntax Term ::= "$fn_impl" FunParams "=" Term
+  rule $fn_impl (X:Id, Xs:FunParams) = E:Term =>
+                fn X (=>) ($fn_impl (Xs) = E)       [macro]
+  rule $fn_impl (.FunParams) = E:Term => E          [macro]
 
 
   // Termination
@@ -74,6 +65,10 @@ module K-METAML-EXEC
 
   // Unit
   rule <k> U:Unit => $conv(U, $tag$v) ... </k>
+       <level> N </level>
+       when N >=Int 0
+
+  rule <k> $builtin_fn(F:BuiltinFn) => sup($builtin_fn(F)) ... </k>
        <level> N </level>
        when N >=Int 0
 
@@ -178,13 +173,13 @@ module K-METAML-EXEC
        <level> 1 => 0 </level>
        <venv> _ => VEnv </venv>
 
-  syntax KItem ::= abs0EndRec(Id, Id, Map, Int)
-  rule <k> $fn_rec BindN:Id X:Id => E:Term => E ~> abs0EndRec(!XX, BindN, VEnv, 0) ... </k>
+  syntax KItem ::= abs0EndMu(Id, Map, Int)
+  rule <k> $mu X:Id => E:Term => E ~> abs0EndMu(!XX, VEnv, 0) ... </k>
        <level> 0 => 1 </level>
        <venv> VEnv => VEnv[X <- Sym(!XX)] </venv>
 
-  rule <k> $conv(E1, _) ~> abs0EndRec(XX, BindN, VEnv, 0) =>
-                    sup($fn_rec BindN XX => E1) ... </k>
+  rule <k> $conv(E1, _) ~> abs0EndMu(XX, VEnv, 0) =>
+                    sup($mu XX => E1) ... </k>
        <level> 1 => 0 </level>
        <venv> _ => VEnv </venv>
 
@@ -200,14 +195,14 @@ module K-METAML-EXEC
        <venv> _ => VEnv </venv>
        when N >=Int 1
 
-  syntax KItem ::= absNEndRec(Id, Id, Map, Int)
-  rule <k> $fn_rec BindN:Id X:Id => E:Term => E ~> absNEndRec(!XX, BindN, VEnv, N) ... </k>
+  syntax KItem ::= absNEndMu(Id, Map, Int)
+  rule <k> $mu X:Id => E:Term => E ~> absNEndMu(!XX, VEnv, N) ... </k>
        <level> N </level>
        <venv> VEnv => VEnv[X <- Sym(!XX)] </venv>
        when N >=Int 1
 
-  rule <k> $conv(E1, _) ~> absNEndRec(XX, BindN, VEnv, N) =>
-                    sup($fn_rec BindN XX => E1) ... </k>
+  rule <k> $conv(E1, _) ~> absNEndMu(XX, VEnv, N) =>
+                    sup($mu XX => E1) ... </k>
        <level> N </level>
        <venv> _ => VEnv </venv>
        when N >=Int 1
@@ -228,26 +223,12 @@ module K-METAML-EXEC
        <level> 0 </level>
        <venv> _ => VEnv </venv>
 
-  syntax KItem ::= app0TmpRec(Term, Term)   // (Val, RefId), Arg
-                 | app0MedRec(Id, Id, Term, Map)  // Param, BindId, Body, VEnv
-
-  rule <k> $conv($fn_rec BindN:Id X:Id => E:Term, _) ~> app0First(E2:Term, VEnv) =>
-                       E2 ~> app0MedRec(X, BindN, E:Term, VEnv) ... </k>
+  syntax KItem ::= app0MedMu(Id, Term, Map)  // Param, Body, VEnv
+  rule <k> $conv($mu X:Id => E:Term, _) ~> app0First(E2:Term, VEnv) =>
+                       sup(E[X |-> ($mu X => E)]) ~> app0First(E2:Term, VEnv) ... </k>
        <level> 0 </level>
-  rule <k> $conv(V2:Term, $tag$v) ~> app0MedRec(X, BindN, E, VEnv) =>
-            app0TmpRec(RealRef(Val, SymId), V2) ~> app0MedRec(X, BindN, E, VEnv) ... </k>
-       <level> 0 </level>
-       <venv> ... BindN |-> RealRef(Val, SymId) ... </venv>
-  rule <k> app0TmpRec(RealRef(Val, SymId), V2) ~> app0MedRec(X, BindN, E, VEnv) =>
-            E ~> app0End(VEnv) ... </k>
-       <level> 0 </level>
-       <venv> _ => .Map[X <- Real(V2)]
-                       [BindN <- RealRef(Val, SymId)]
-                       [SymId <- Real(Val)]
-       </venv>
 
   syntax KItem ::= app0MedBuiltin(BuiltinFn, Map)  // Name, VEnv
-
   rule <k> $conv($builtin_fn(BFn:BuiltinFn), _) ~> app0First(E2:Term, VEnv) =>
                  E2 ~> app0MedBuiltin(BFn, VEnv) ... </k>
        <level> 0 </level>
@@ -274,9 +255,6 @@ module K-METAML-EXEC
   rule <k> X:Id => sup(V) ... </k>
        <venv> ... X |-> Real(V) ... </venv>
        <level> 0 </level>
-  rule <k> X:Id => sup(V) ... </k>
-       <venv> ... X |-> RealRef(V, _) ... </venv>
-       <level> 0 </level>
   rule <k> X:BuiltinFn => sup($builtin_fn(X)) ... </k>
        <venv> VEnv </venv>
        <level> 0 </level>
@@ -296,10 +274,6 @@ module K-METAML-EXEC
   // RVar n+1
   rule <k> X:Id => sup(%V) ... </k>
        <venv> ... X |-> Real(V) ... </venv>
-       <level> N </level>
-       when N >=Int 1
-  rule <k> X:Id => sup(%V) ... </k>
-       <venv> ... X |-> RealRef(V, _) ... </venv>
        <level> N </level>
        when N >=Int 1
   rule <k> X:BuiltinFn => sup(%$builtin_fn(X)) ... </k>

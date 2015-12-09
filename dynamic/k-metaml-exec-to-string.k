@@ -38,6 +38,10 @@ module K-METAML-EXEC-TO-STRING
         "(" +String Term2String(E1) +String " - " +String Term2String(E2) +String ")"
   rule Term2String(E1:Term = E2:Term) =>
         "(" +String Term2String(E1) +String " = " +String Term2String(E2) +String ")"
+  rule Term2String(E1:Term '>' E2:Term) =>
+        "(" +String Term2String(E1) +String " '>' " +String Term2String(E2) +String ")"
+  rule Term2String(E1:Term '<' E2:Term) =>
+        "(" +String Term2String(E1) +String " '<' " +String Term2String(E2) +String ")"
 
   rule Term2String(if E1:Term then E2:Term else E3:Term) =>
                       "if " +String Term2String(E1) +String " then " +String Term2String(E2) +String " else " +String Term2String(E3)
@@ -45,12 +49,19 @@ module K-METAML-EXEC-TO-STRING
   rule Term2String(fn P:Id Ps:FnParamRest E:Term) =>
         "fn " +String Id2String(P) +String Params2String(Ps) +String Term2String(E)
 
-  rule Term2String($fn_rec BindN:Id P:Id Ps:FnParamRest E:Term) =>
-        "fn " +String Id2String(P) +String Params2String(Ps) +String Term2String(E)
+  rule Term2String($mu P:Id => E:Term) =>
+        "fn " +String Id2String(P) +String " => " +String Term2String(E)
 
   rule Term2String(run E:Term) => "(run" +String Term2String(E) +String ")"
 
   rule Term2String(% E:Term) => "%" +String Term2String(E)
+
+  rule Term2String($builtin_fn(hd)) => "hd"
+  rule Term2String($builtin_fn(tl)) => "tl"
+  rule Term2String($builtin_fn(null)) => "null"
+  rule Term2String($builtin_fn(nth)) => "nth"
+  rule Term2String($builtin_fn(nthArg1(E))) => "nth " +String Term2String(E)
+
 
   syntax String ::= "Params2String" "(" FnParamRest ")"  [function, klabel(Params2String)]
   rule Params2String(P:Id Ps:FnParamRest) => Id2String(P) +String " " +String Params2String(Ps)

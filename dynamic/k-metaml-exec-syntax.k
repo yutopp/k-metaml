@@ -16,10 +16,10 @@ module K-METAML-EXEC-SYNTAX-EXTEND
   syntax KItem ::= "EOE"
 
 
-  syntax Term ::= Sym(Id) | Real(Term) | RealRef(Term, Id)
+  syntax Term ::= Sym(Id) | Real(Term)
   syntax Term ::= "%" Term
 
-  syntax Term ::= "$fn_rec" Id Id FnParamRest Term
+  syntax Term ::= "$mu" Id "=>" Term
 
   syntax Term ::= "$builtin_fn" "(" BuiltinFn ")"
   syntax Term ::= "$run_builtin" "(" BuiltinFn "," Term ")"
@@ -37,18 +37,18 @@ module K-METAML-EXEC-SYNTAX-EXTEND
   rule isValue($builtin_fn(_:BuiltinFn), N) => true
 
   rule isValue(fn X:Id => E:Term, 0) => true
-  rule isValue($fn_rec BindN X:Id => E:Term, 0) => true
+  rule isValue($mu X:Id => E:Term, 0) => true
   rule isValue(< E:Term >       , 0) => true when isValue(E, 1)
 
   rule isValue(E1:Term E2:Term, 1) => true when isValue(E1, 1) andBool isValue(E2, 1)
   rule isValue(fn X:Id => E:Term, 1) => true when isValue(E, 1)
-  rule isValue($fn_rec BindN X:Id => E:Term, 1) => true when isValue(E, 1)
+  rule isValue($mu X:Id => E:Term, 1) => true when isValue(E, 1)
   rule isValue(< E:Term >, 1) => true when isValue(E, 2)
   rule isValue(run E:Term, 1) => true when isValue(E, 1)
 
   rule isValue(E1:Term E2:Term, N2) => true when N2 >=Int 2 andBool isValue(E1, N2) andBool isValue(E2, N2)
   rule isValue(fn X:Id => E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
-  rule isValue($fn_rec BindN X:Id => E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
+  rule isValue($mu X:Id => E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
   rule isValue(< E:Term >, N2) => true when N2 >=Int 2 andBool isValue(E, N2 +Int 1)
   rule isValue(~ E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2 -Int 1)
   rule isValue(run E:Term, N2) => true when N2 >=Int 2 andBool isValue(E, N2)
