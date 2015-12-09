@@ -4,4 +4,4 @@ Solution 1:
 N:Int -->
 -1
 V:Term -->
-$fn_rec g _5 => (% fn _1 => _1) _5
+$mu _3 => fn _5 => (% fn _1 => _1) _5
