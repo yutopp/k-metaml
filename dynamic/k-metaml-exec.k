@@ -272,11 +272,11 @@ module K-METAML-EXEC
        when N >=Int 1
 
   // RVar n+1
-  rule <k> X:Id => sup(%V) ... </k>
+  rule <k> X:Id => sup(%(X, V)) ... </k>
        <venv> ... X |-> Real(V) ... </venv>
        <level> N </level>
        when N >=Int 1
-  rule <k> X:BuiltinFn => sup(%$builtin_fn(X)) ... </k>
+  rule <k> X:BuiltinFn => sup(%(X, $builtin_fn(X))) ... </k>
        <venv> VEnv </venv>
        <level> N </level>
        when N >=Int 1 andBool notBool(X in keys(VEnv))
@@ -361,18 +361,18 @@ module K-METAML-EXEC
 
 
   // Constant 0
-  syntax KItem ::= constEnd0(Int)
-  rule <k> %V => V ~> constEnd0(0) ... </k>
+  syntax KItem ::= "constEnd0"
+  rule <k> %(_, V) => V ~> constEnd0 ... </k>
        <level> 0 </level>
-  rule <k> $conv(V, $tag$v) ~> (constEnd0(0) => .) ... </k>
+  rule <k> $conv(V, $tag$v) ~> constEnd0 => sup(V) ... </k>
        <level> 0 </level>
 
   // Constant n+1
-  syntax KItem ::= constEndN(Int)
-  rule <k> %V => V ~> constEndN(0) ... </k>
+  syntax KItem ::= constEndN(Int, Term)
+  rule <k> %(X, V) => V ~> constEndN(N, X) ... </k>
        <level> N </level>
        when N >=Int 1
-  rule <k> $conv(V, $tag$v) ~> constEndN(0) => sup(%V) ... </k>
+  rule <k> $conv(V, $tag$v) ~> constEndN(N, X) => sup(%(X, V)) ... </k>
        <level> N </level>
        when N >=Int 1
 

@@ -55,7 +55,7 @@ module K-METAML-EXEC-TO-STRING
   rule Term2String(run E:Term) => "(run" +String Term2String(E) +String ")"
   rule Term2String(lift E:Term) => "(lift" +String Term2String(E) +String ")"
 
-  rule Term2String(% E:Term) => "%" +String Term2String(E)
+  rule Term2String(%(X:Term, E:Term)) => "%" +String Term2String(X) // Show symbol
 
   rule Term2String($builtin_fn(hd)) => "hd"
   rule Term2String($builtin_fn(tl)) => "tl"

@@ -17,7 +17,7 @@ module K-METAML-EXEC-SYNTAX-EXTEND
 
 
   syntax Term ::= Sym(Id) | Real(Term)
-  syntax Term ::= "%" Term
+  syntax Term ::= "%" "(" Term "," Term ")"     // Symbol, Constant
 
   syntax Term ::= "$mu" Id "=>" Term
 
