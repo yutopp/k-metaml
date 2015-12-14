@@ -24,7 +24,6 @@ module K-METAML-EXEC-SYNTAX-EXTEND
   syntax Term ::= "$builtin_fn" "(" BuiltinFn ")"
   syntax Term ::= "$run_builtin" "(" BuiltinFn "," Term ")"
 
-
   syntax KItem ::= isValue(Term, Int)   [function, boolOperation]
 
   rule isValue(Int,  N) => true

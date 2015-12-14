@@ -57,11 +57,13 @@ module K-METAML-EXEC-TO-STRING
 
   rule Term2String(%(X:Term, E:Term)) => "%" +String Term2String(X) // Show symbol
 
-  rule Term2String($builtin_fn(hd)) => "hd"
-  rule Term2String($builtin_fn(tl)) => "tl"
-  rule Term2String($builtin_fn(null)) => "null"
-  rule Term2String($builtin_fn(nth)) => "nth"
-  rule Term2String($builtin_fn(nthArg1(E))) => "nth " +String Term2String(E)
+  rule Term2String(hd:BuiltinFn) => "hd"
+  rule Term2String(tl:BuiltinFn) => "tl"
+  rule Term2String(null:BuiltinFn) => "null"
+  rule Term2String(nth:BuiltinFn) => "nth"
+  rule Term2String(nthArg1(E):BuiltinFn) => "nth " +String Term2String(E)
+
+  rule Term2String($builtin_fn(Bf:BuiltinFn)) => Term2String(Bf)
 
 
   syntax String ::= "Params2String" "(" FnParamRest ")"  [function, klabel(Params2String)]

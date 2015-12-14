@@ -99,9 +99,9 @@ module K-METAML-TYPING
   rule T1:Type * T2:Type => T1 =!= int ~> T2 =!= int ~> int
   rule T1:Type / T2:Type => T1 =!= int ~> T2 =!= int ~> int
 
-  rule T1:Type = T2:Type => T1 =!= T2 ~> bool
-  rule T1:Type '>' T2:Type => T1 =!= T2 ~> bool
-  rule T1:Type '<' T2:Type => T1 =!= T2 ~> bool
+  rule T1:Type = T2:Type => T1 =!= int ~> T2 =!= int ~> bool
+  rule T1:Type '>' T2:Type => T1 =!= int ~> T2 =!= int ~> bool
+  rule T1:Type '<' T2:Type => T1 =!= int ~> T2 =!= int ~> bool
 
   rule <k> hd => (?T list) -> ?T ... </k>
        <level> N </level>
